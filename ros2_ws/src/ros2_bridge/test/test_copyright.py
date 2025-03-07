@@ -1,3 +1,4 @@
+# noqa
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +18,14 @@ import pytest
 
 
 # Remove the `skip` decorator once the source file(s) have a copyright header
-@pytest.mark.skip(reason='No copyright header has been placed in the generated source file.')
+# @pytest.mark.skip(reason='No copyright header has been placed in the generated source file.')
 @pytest.mark.copyright
 @pytest.mark.linter
-def test_copyright():
-    rc = main(argv=['.', 'test'])
+def test_copyright(): # noqa
+    rc = main(argv=[
+        '.', 'test',
+        '--exclude', 'build/ros2_bridge/prefix_override/sitecustomize.py',
+        'install/_local_setup_util_ps1.py',
+        'install/_local_setup_util_sh.py'
+    ])
     assert rc == 0, 'Found errors'

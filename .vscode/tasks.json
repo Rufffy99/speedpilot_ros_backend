@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build ROS Bridge",
+        "type": "shell",
+        "command": "colcon build --symlink-install",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run ROS Bridge",
+        "type": "shell",
+        "command": "colcon build --symlink-install && source install/setup.bash && ros2 ros2 run ros2_bridge bridge_node",
+        "group": {
+          "kind": "build",
+          "isDefault": false
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Test ROS Bridge",
+        "type": "shell",
+        "command": "colcon test --packages-select ros2_bridge && colcon test-result --verbose",
+        "presentation": {
+          "reveal": "always",
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      }
+    ],
+    "compounds": [
+      {
+        "label": "Build & Test ROS Bridge",
+        "tasks": [
+          "Build ROS Bridge",
+          "Test ROS Bridge"
+        ]
+      }
+    ]
+  }
