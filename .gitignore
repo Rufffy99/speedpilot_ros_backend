@@ -1,0 +1,10 @@
+/.cache
+/.colcon
+/.dotnet
+/.gitconfig
+/.gnupg
+/.launchpadlib
+/.profile
+/.ros
+/.ssh
+/.vscode-server
