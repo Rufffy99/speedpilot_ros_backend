@@ -25,7 +25,8 @@ import time
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+
+from custom_msgs.msg import VehicleCommand
 
 from websocket_server import WebsocketServer
 
@@ -91,7 +92,7 @@ class ROSBridge(Node):
     def __init__(self):
         """Initialize the ROSBridge node and start the WebSocket server."""
         super().__init__('ros_bridge')
-        self.cmd_publisher = self.create_publisher(String, 'vehicle_command', 10)
+        self.cmd_publisher = self.create_publisher(VehicleCommand, 'vehicle_command', 10)
         self.get_logger().info('Starting WebSocket server...')
         self.websocket_thread = threading.Thread(
             target=self.run_websocket_server, daemon=True
@@ -162,11 +163,14 @@ class ROSBridge(Node):
             if not isinstance(data, dict):
                 self.get_logger().warning(f'Invalid JSON format: {data}')
                 return
-            if 'command' in data:
-                msg = String()
-                msg.data = data['command']
+            if all(key in data for key in ['speed', 'angle']):
+                msg = VehicleCommand()
+                msg.speed = float(data['speed'])
+                msg.angle = float(data['angle'])
                 self.cmd_publisher.publish(msg)
-                self.get_logger().info(f'Sent: {msg.data}')
+                self.get_logger().info(
+                    f'Published command: speed={msg.speed}, angle={msg.angle}'
+                )
             else:
                 self.get_logger().warning(
                     f'JSON message without "command" key received: {data}'
