@@ -22,6 +22,7 @@ Run a ROS2 node that hosts a WebSocket server to bridge commands from external c
 import json
 import threading
 import time
+import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
 
@@ -92,6 +93,10 @@ class ROSBridge(Node):
     def __init__(self):
         """Initialize the ROSBridge node and start the WebSocket server."""
         super().__init__('ros_bridge')
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(16, GPIO.OUT)
+        GPIO.output(16, GPIO.HIGH)
         self.cmd_publisher = self.create_publisher(VehicleCommand, 'vehicle_command', 10)
         self.get_logger().info('Starting WebSocket server...')
         self.websocket_thread = threading.Thread(

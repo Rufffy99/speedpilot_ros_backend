@@ -64,6 +64,10 @@ class CarController(Node): # noqa
         GPIO.setup(self.motor_backward_pin, GPIO.OUT)
         GPIO.setup(self.motor_steering_pin, GPIO.OUT)
 
+        # Set mode LED on pin 20 to indicate 'wait' mode
+        GPIO.setup(20, GPIO.OUT)
+        GPIO.output(20, GPIO.HIGH)
+
         # Initialize PWM at 50Hz
         self.motor_forward_pwm = GPIO.PWM(self.motor_forward_pin, 50)
         self.motor_backward_pwm = GPIO.PWM(self.motor_backward_pin, 50)
