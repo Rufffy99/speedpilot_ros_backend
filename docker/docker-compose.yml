@@ -6,6 +6,11 @@ services:
     ipc: host
     network_mode: host
     privileged: true
+    devices:
+      - /dev/gpiomem
+      - /dev/mem
+    ports:
+      - 9090:9090
     environment:
       - DISPLAY
       - XAUTHORITY=/tmp/.Xauthority
@@ -14,6 +19,9 @@ services:
       - $HOME/.Xauthority:/tmp/.Xauthority
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /dev:/dev
+      - /sys/class/gpio:/sys/class/gpio
+      - /dev/gpiomem:/dev/gpiomem
+      - /dev/mem:/dev/mem
     command: ["tail", "-f", "/dev/null"]
 
   # The following services are commented out for this tutorial.

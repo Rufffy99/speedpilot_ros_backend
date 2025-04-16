@@ -9,13 +9,13 @@ def generate_launch_description(): # noqa
     return LaunchDescription([
         Node(
             package='ros2_bridge',
-            executable='bridge_node',  # Make sure this matches the entry point in setup.py
+            executable='bridge_node',
             name='ros2_bridge',
             output='screen'
         ),
         Node(
             package='car_controller',
-            executable='controller_node',  # Make sure this matches the entry point in setup.py
+            executable='controller_node',
             name='car_controller',
             output='screen'
         )

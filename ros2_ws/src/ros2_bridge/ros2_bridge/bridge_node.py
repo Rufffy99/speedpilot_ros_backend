@@ -23,10 +23,10 @@ import json
 import threading
 import time
 
+from custom_msgs.msg import VehicleCommand
+
 import rclpy
 from rclpy.node import Node
-
-from custom_msgs.msg import VehicleCommand
 
 from websocket_server import WebsocketServer
 
@@ -101,7 +101,7 @@ class ROSBridge(Node):
 
     def run_websocket_server(self):
         """Start the WebSocket server in an infinite loop so that it restarts upon any error."""
-        patch_websocket_server()  # Apply monkey patch before starting the server
+        patch_websocket_server()
         while True:
             try:
                 self.get_logger().info('WebSocket server running on port 9090...')
@@ -158,23 +158,49 @@ class ROSBridge(Node):
             )
 
     def process_message(self, data):
-        """Process incoming WebSocket messages and send them to ROS2."""
+        """
+        Process an incoming message command and act accordingly.
+
+        This method expects the input data to be a dictionary representing a JSON-formatted message.
+        It handles different commands as follows:
+            - "move": Requires 'speed' and 'angle' keys. Publishes a VehicleCommand with the specified values.
+            - "status": Logs a status request (functionality not implemented).
+            - "stop": Publishes a VehicleCommand with speed and angle set to zero.
+        If the input is not a dictionary, or if required keys for a command are missing, a warning is logged.
+        Any exceptions during processing are caught and logged as errors.
+        Parameters:
+            data (dict): A dictionary containing a 'command' key and other relevant keys based on the command type.
+        Returns:
+            None
+        """
         try:
             if not isinstance(data, dict):
                 self.get_logger().warning(f'Invalid JSON format: {data}')
                 return
-            if all(key in data for key in ['speed', 'angle']):
+
+            cmd = data.get('command', None)
+            if cmd == 'move':
+                if 'speed' in data and 'angle' in data:
+                    msg = VehicleCommand()
+                    msg.speed = float(data['speed'])
+                    msg.angle = float(data['angle'])
+                    self.cmd_publisher.publish(msg)
+                    self.get_logger().info(
+                        f'Published command: speed={msg.speed}, angle={msg.angle}'
+                    )
+                else:
+                    self.get_logger().warning('Move command missing speed or angle.')
+            elif cmd == 'status':
+                self.get_logger().info('Status request received (not implemented).')
+                # Optional: Send a reply via WebSocket (z. B. server.send_message(client, "..."))
+            elif cmd == 'stop':
                 msg = VehicleCommand()
-                msg.speed = float(data['speed'])
-                msg.angle = float(data['angle'])
+                msg.speed = 0.0
+                msg.angle = 0.0
                 self.cmd_publisher.publish(msg)
-                self.get_logger().info(
-                    f'Published command: speed={msg.speed}, angle={msg.angle}'
-                )
+                self.get_logger().info('Stop command issued.')
             else:
-                self.get_logger().warning(
-                    f'JSON message without "command" key received: {data}'
-                )
+                self.get_logger().warning(f'Unknown command type: {cmd}')
         except Exception as e:
             self.get_logger().error(f'Error processing message: {e}')
 
