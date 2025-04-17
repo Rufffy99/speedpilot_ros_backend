@@ -101,12 +101,12 @@ class CarController(Node):
         # Initialize PWM at 50Hz
         self.motor_forward = GPIO.PWM(self.motor_forward_pin, 50)
         self.motor_backward = GPIO.PWM(self.motor_backward_pin, 50)
-        self.motor_backward = GPIO.PWM(self.motor_steering_pin, 50)
+        self.motor_steering = GPIO.PWM(self.motor_steering_pin, 50)
 
         # Start PWM with 0% duty cycle
         self.motor_forward.start(0)
         self.motor_backward.start(0)
-        self.motor_backward.start(0)
+        self.motor_steering.start(0)
 
         self.subscription = self.create_subscription(
             VehicleCommand,
@@ -133,7 +133,7 @@ class CarController(Node):
             - Uses the angle value from msg to set the vehicle's steering via set_steering.
         """
         self.get_logger().info(
-            f'Received command: command={msg.command}, speed={msg.speed}, angel={msg.angle}'
+            f'Received command: command={msg.command}, speed={msg.speed}, angle={msg.angle}'
         )
         if msg.speed > 0:
             self.drive_forward(msg.speed)
@@ -200,7 +200,7 @@ class CarController(Node):
         elif angle > 0:
             duty_cycle = min(10.0, 7.5 + (angle / 90) * 2.5)
 
-        self.motor_backward.ChangeDutyCycle(duty_cycle)
+        self.motor_steering.ChangeDutyCycle(duty_cycle)
         self.get_logger().info(f'PWM: Steering with angle {angle}, duty_cycle {duty_cycle}')
 
 
