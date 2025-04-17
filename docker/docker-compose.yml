@@ -1,7 +1,6 @@
-
 services:
   manipulation: &manipulation
-    build: 
+    build:
       context: ../
       dockerfile: docker/Dockerfile
     container_name: manipulation
@@ -26,4 +25,3 @@ services:
       - /dev/gpiomem:/dev/gpiomem
       - /dev/mem:/dev/mem
     command: ["tail", "-f", "/dev/null"]
-
