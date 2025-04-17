@@ -16,3 +16,9 @@
 /ros2_ws/install
 /ros2_ws/log
 /ros2_ws/src/ros2_bridge/test/__pycache__/
+/ros2_ws/src/build
+/ros2_ws/src/install
+/ros2_ws/src/log
+/ros2_ws/src/__pycache__
+/ros2_ws/src/ros2_bridge/ros2_bridge/__pycache__
+/ros2_ws/src/car_controller/car_controller/__pycache__
