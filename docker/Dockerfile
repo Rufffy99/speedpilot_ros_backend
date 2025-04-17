@@ -7,7 +7,7 @@ ARG ROS_DISTRO=jazzy
 FROM ros:${ROS_DISTRO}
 
 # Set the maintainer information for this Dockerfile
-LABEL maintainer="AutomaticAddison<automatic_addison@todo.com>"
+LABEL maintainer="MaxDomitrovic<max@domitrovic.com>"
 
 # Set environment variables
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
