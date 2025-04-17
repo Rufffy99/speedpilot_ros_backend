@@ -15,7 +15,7 @@
 """Car Controller Node.
 
 Subscribe to the 'vehicle_command' topic and convert VehicleCommand messages into
-vehicle control actions.^
+vehicle control actions.
 """
 
 
