@@ -60,7 +60,7 @@ RUN mkdir -p /etc/udev/rules.d && \
 
 # Copy the entire project into the container
 # Since we're using the parent directory as context, we can copy everything
-COPY . /root/ros2_ws/src/mycobot_ros2
+COPY ros2_ws/src/ /root/ros2_ws/src/
 
 # Copy configuration files from docker directory
 # Note the docker/ prefix since we're in the parent context
