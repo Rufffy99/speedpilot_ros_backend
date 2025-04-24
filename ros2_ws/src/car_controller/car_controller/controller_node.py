@@ -142,7 +142,7 @@ class CarController(Node):
         else:
             self.get_logger().info('No movement command received (speed is zero).')
 
-        # Benutze das angle-Feld für die Lenkung
+        # Use the angle field for steering
         self.set_steering(msg.angle)
 
     def drive_forward(self, speed):
