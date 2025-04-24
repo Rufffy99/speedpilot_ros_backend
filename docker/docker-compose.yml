@@ -1,0 +1,29 @@
+
+services:
+  manipulation: &manipulation
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: manipulation
+    image: manipulation:latest
+    ipc: host
+    network_mode: host
+    privileged: true
+    devices:
+      - /dev/gpiomem
+      - /dev/mem
+    ports:
+      - 9090:9090
+    environment:
+      - DISPLAY
+      - XAUTHORITY=/tmp/.Xauthority
+    volumes:
+      - $HOME/automaticaddison/shared/ros2:/root/shared/ros2
+      - $HOME/.Xauthority:/tmp/.Xauthority
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+      - /sys/class/gpio:/sys/class/gpio
+      - /dev/gpiomem:/dev/gpiomem
+      - /dev/mem:/dev/mem
+    command: ["tail", "-f", "/dev/null"]
+
