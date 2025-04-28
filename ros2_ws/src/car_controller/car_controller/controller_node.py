@@ -25,6 +25,7 @@ from custom_msgs.msg import VehicleCommand
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 
 
 class CarController(Node):
@@ -106,13 +107,19 @@ class CarController(Node):
         # Start PWM with 0% duty cycle
         self.motor_forward.start(0)
         self.motor_backward.start(0)
-        self.motor_steering.start(0)
+        self.motor_steering.start(7.5)
+
+        qos_profile = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE
+        )
 
         self.subscription = self.create_subscription(
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
-            10
+            qos_profile
         )
         self.get_logger().info('CarController node started.')
 
@@ -140,7 +147,8 @@ class CarController(Node):
         elif msg.speed < 0:
             self.drive_backward(abs(msg.speed))
         else:
-            self.get_logger().info('No movement command received (speed is zero).')
+            self.motor_forward.ChangeDutyCycle(0)
+            self.motor_backward.ChangeDutyCycle(0)
 
         # Benutze das angle-Feld für die Lenkung
         self.set_steering(msg.angle)
@@ -196,11 +204,13 @@ class CarController(Node):
                            positive values steer right.
         This method updates the PWM duty cycle accordingly and logs the resulting duty cycle along with the input angle.
         """
-        duty_cycle = 7.5  # Default center
-        if angle < 0:
-            duty_cycle = max(5.0, 7.5 + (angle / 90) * 2.5)
-        elif angle > 0:
-            duty_cycle = min(10.0, 7.5 + (angle / 90) * 2.5)
+        neutral_duty_cycle = 7.5
+        minimum_duty_cycle = 5.0
+        maximum_duty_cycle = 10.0
+
+        duty_cycle = neutral_duty_cycle + (angle * (neutral_duty_cycle - minimum_duty_cycle))
+
+        duty_cycle = max(min(duty_cycle, maximum_duty_cycle), minimum_duty_cycle)
 
         self.motor_steering.ChangeDutyCycle(duty_cycle)
         self.get_logger().info(f'PWM: Steering with angle {angle}, duty_cycle {duty_cycle}')
