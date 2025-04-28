@@ -7,7 +7,8 @@ ARG ROS_DISTRO=jazzy
 FROM ros:${ROS_DISTRO}
 
 # Set the maintainer information for this Dockerfile
-LABEL maintainer="AutomaticAddison<automatic_addison@todo.com>"
+
+LABEL maintainer="MaxDomitrovic<max@domitrovic.com>"
 
 # Set environment variables
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
@@ -60,7 +61,8 @@ RUN mkdir -p /etc/udev/rules.d && \
 
 # Copy the entire project into the container
 # Since we're using the parent directory as context, we can copy everything
-COPY . /root/ros2_ws/src/mycobot_ros2
+
+COPY ros2_ws/src/ /root/ros2_ws/src/
 
 # Copy configuration files from docker directory
 # Note the docker/ prefix since we're in the parent context

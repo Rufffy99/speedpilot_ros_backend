@@ -115,6 +115,7 @@ class CarController(Node):
             durability=DurabilityPolicy.VOLATILE
         )
 
+
         self.subscription = self.create_subscription(
             VehicleCommand,
             'vehicle_command',
