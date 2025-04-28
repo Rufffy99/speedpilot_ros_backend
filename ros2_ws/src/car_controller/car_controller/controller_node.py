@@ -159,9 +159,10 @@ class CarController(Node):
             - Modifies the state of motor_forward and motor_backward PWM channels.
             - Logs the driving action with the specified speed.
         """
-        self.motor_forward.ChangeDutyCycle(min(max(speed, 0), 100))
+        pwm_speed = min(max(speed * 100, 0), 100)
+        self.motor_forward.ChangeDutyCycle(pwm_speed)
         self.motor_backward.ChangeDutyCycle(0)
-        self.get_logger().info(f'PWM: Driving forward at speed {speed}')
+        self.get_logger().info(f'PWM: Driving forward at speed {pwm_speed}%')
 
     def drive_backward(self, speed):
         """
@@ -177,9 +178,10 @@ class CarController(Node):
         Returns:
             None
         """
+        pwm_speed = min(max(speed * 100, 0), 100)
         self.motor_forward.ChangeDutyCycle(0)
-        self.motor_backward.ChangeDutyCycle(min(max(speed, 0), 100))
-        self.get_logger().info(f'PWM: Driving backward at speed {speed}')
+        self.motor_backward.ChangeDutyCycle(pwm_speed)
+        self.get_logger().info(f'PWM: Driving backward at speed {pwm_speed}%')
 
     def set_steering(self, angle):
         """
