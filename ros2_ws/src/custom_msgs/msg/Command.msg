@@ -1,1 +1,1 @@
-str command # The command to be executed
+string command # The command to be executed

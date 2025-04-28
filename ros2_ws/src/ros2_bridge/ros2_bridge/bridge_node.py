@@ -187,11 +187,12 @@ class ROSBridge(Node):
             if cmd == 'move':
                 if 'speed' in data and 'angle' in data:
                     msg = VehicleCommand()
+                    msg.command = 'move'
                     msg.speed = float(data['speed'])
                     msg.angle = float(data['angle'])
                     self.cmd_publisher.publish(msg)
                     self.get_logger().info(
-                        f'Published command: speed={msg.speed}, angle={msg.angle}'
+                        f'Published command: command={msg.command} speed={msg.speed}, angle={msg.angle}'
                     )
                 else:
                     self.get_logger().warning('Move command missing speed or angle.')

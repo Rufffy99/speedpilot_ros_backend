@@ -7,6 +7,7 @@ ARG ROS_DISTRO=jazzy
 FROM ros:${ROS_DISTRO}
 
 # Set the maintainer information for this Dockerfile
+
 LABEL maintainer="MaxDomitrovic<max@domitrovic.com>"
 
 # Set environment variables
@@ -60,6 +61,7 @@ RUN mkdir -p /etc/udev/rules.d && \
 
 # Copy the entire project into the container
 # Since we're using the parent directory as context, we can copy everything
+
 COPY ros2_ws/src/ /root/ros2_ws/src/
 
 # Copy configuration files from docker directory
