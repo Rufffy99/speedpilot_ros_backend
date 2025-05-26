@@ -8,6 +8,7 @@
 /.ros
 /.ssh
 /.vscode-server
+/.vscode
 /.local
 /build
 /install
