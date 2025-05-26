@@ -22,6 +22,9 @@ Run a ROS2 node that hosts a WebSocket server to bridge commands from external c
 import json
 import threading
 import time
+import RPi.GPIO as GPIO
+
+from custom_msgs.msg import VehicleCommand
 
 import RPi.GPIO as GPIO
 
@@ -201,6 +204,7 @@ class ROSBridge(Node):
                 if 'speed' in data and 'angle' in data:
                     msg = VehicleCommand()
                     msg.command = 'move'
+
                     msg.speed = float(data['speed'])
                     msg.angle = float(data['angle'])
                     self.cmd_publisher.publish(msg)

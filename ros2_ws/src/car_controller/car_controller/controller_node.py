@@ -115,12 +115,12 @@ class CarController(Node):
             durability=DurabilityPolicy.VOLATILE
         )
 
-
         self.subscription = self.create_subscription(
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
             qos_profile
+            10
         )
         self.get_logger().info('CarController node started.')
 
@@ -150,8 +150,9 @@ class CarController(Node):
         else:
             self.motor_forward.ChangeDutyCycle(0)
             self.motor_backward.ChangeDutyCycle(0)
+            self.get_logger().info('No movement command received (speed is zero).')
 
-        # Benutze das angle-Feld für die Lenkung
+        # Use the angle field for steering
         self.set_steering(msg.angle)
 
     def drive_forward(self, speed):
