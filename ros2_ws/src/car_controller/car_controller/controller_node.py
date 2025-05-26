@@ -25,6 +25,7 @@ from custom_msgs.msg import VehicleCommand
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 
 
 class CarController(Node):
@@ -106,12 +107,19 @@ class CarController(Node):
         # Start PWM with 0% duty cycle
         self.motor_forward.start(0)
         self.motor_backward.start(0)
-        self.motor_steering.start(0)
+        self.motor_steering.start(7.5)
+
+        qos_profile = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE
+        )
 
         self.subscription = self.create_subscription(
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
+            qos_profile
             10
         )
         self.get_logger().info('CarController node started.')
@@ -140,6 +148,8 @@ class CarController(Node):
         elif msg.speed < 0:
             self.drive_backward(abs(msg.speed))
         else:
+            self.motor_forward.ChangeDutyCycle(0)
+            self.motor_backward.ChangeDutyCycle(0)
             self.get_logger().info('No movement command received (speed is zero).')
 
         # Use the angle field for steering
@@ -159,9 +169,10 @@ class CarController(Node):
             - Modifies the state of motor_forward and motor_backward PWM channels.
             - Logs the driving action with the specified speed.
         """
-        self.motor_forward.ChangeDutyCycle(min(max(speed, 0), 100))
+        pwm_speed = min(max(speed * 100, 0), 100)
+        self.motor_forward.ChangeDutyCycle(pwm_speed)
         self.motor_backward.ChangeDutyCycle(0)
-        self.get_logger().info(f'PWM: Driving forward at speed {speed}')
+        self.get_logger().info(f'PWM: Driving forward at speed {pwm_speed}%')
 
     def drive_backward(self, speed):
         """
@@ -177,9 +188,10 @@ class CarController(Node):
         Returns:
             None
         """
+        pwm_speed = min(max(speed * 100, 0), 100)
         self.motor_forward.ChangeDutyCycle(0)
-        self.motor_backward.ChangeDutyCycle(min(max(speed, 0), 100))
-        self.get_logger().info(f'PWM: Driving backward at speed {speed}')
+        self.motor_backward.ChangeDutyCycle(pwm_speed)
+        self.get_logger().info(f'PWM: Driving backward at speed {pwm_speed}%')
 
     def set_steering(self, angle):
         """
@@ -194,11 +206,13 @@ class CarController(Node):
                            positive values steer right.
         This method updates the PWM duty cycle accordingly and logs the resulting duty cycle along with the input angle.
         """
-        duty_cycle = 7.5  # Default center
-        if angle < 0:
-            duty_cycle = max(5.0, 7.5 + (angle / 90) * 2.5)
-        elif angle > 0:
-            duty_cycle = min(10.0, 7.5 + (angle / 90) * 2.5)
+        neutral_duty_cycle = 7.5
+        minimum_duty_cycle = 5.0
+        maximum_duty_cycle = 10.0
+
+        duty_cycle = neutral_duty_cycle + (angle * (neutral_duty_cycle - minimum_duty_cycle))
+
+        duty_cycle = max(min(duty_cycle, maximum_duty_cycle), minimum_duty_cycle)
 
         self.motor_steering.ChangeDutyCycle(duty_cycle)
         self.get_logger().info(f'PWM: Steering with angle {angle}, duty_cycle {duty_cycle}')

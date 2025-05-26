@@ -26,10 +26,16 @@ import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
 
+import RPi.GPIO as GPIO
+
+from custom_msgs.msg import VehicleCommand
+
 import rclpy
 from rclpy.node import Node
 
 from websocket_server import WebsocketServer
+
+from sensor_msgs.msg import LaserScan
 
 
 def patch_websocket_server():
@@ -103,6 +109,13 @@ class ROSBridge(Node):
             target=self.run_websocket_server, daemon=True
         )
         self.websocket_thread.start()
+        self.lidar_subscriber = self.create_subscription(
+            LaserScan,
+            'scan',
+            self.lidar_callback,
+            10
+        )
+        self.clients = []
 
     def run_websocket_server(self):
         """Start the WebSocket server in an infinite loop so that it restarts upon any error."""
@@ -110,11 +123,11 @@ class ROSBridge(Node):
         while True:
             try:
                 self.get_logger().info('WebSocket server running on port 9090...')
-                server = WebsocketServer(host='0.0.0.0', port=9090)
-                server.set_fn_new_client(self.on_new_client)
-                server.set_fn_message_received(self.websocket_handler)
-                server.set_fn_client_left(self.on_client_disconnect)
-                server.run_forever()
+                self.server = WebsocketServer(host='0.0.0.0', port=9090)
+                self.server.set_fn_new_client(self.on_new_client)
+                self.server.set_fn_message_received(self.websocket_handler)
+                self.server.set_fn_client_left(self.on_client_disconnect)
+                self.server.run_forever()
             except Exception as e:
                 self.get_logger().error(f'WebSocket error: {e}')
                 self.get_logger().info('Restarting WebSocket server in 5 seconds...')
@@ -126,6 +139,7 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client has connected.')
                 return
+            self.clients.append(client)
             self.get_logger().info(
                 f'New WebSocket client connected: {client.get("id", "unknown")}'
             )
@@ -138,6 +152,8 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client disconnected.')
                 return
+            if client in self.clients:
+                self.clients.remove(client)
             self.get_logger().info(
                 f'WebSocket client {client.get("id", "unknown")} has disconnected.'
             )
@@ -187,11 +203,13 @@ class ROSBridge(Node):
             if cmd == 'move':
                 if 'speed' in data and 'angle' in data:
                     msg = VehicleCommand()
+                    msg.command = 'move'
+
                     msg.speed = float(data['speed'])
                     msg.angle = float(data['angle'])
                     self.cmd_publisher.publish(msg)
                     self.get_logger().info(
-                        f'Published command: speed={msg.speed}, angle={msg.angle}'
+                        f'Published command: command={msg.command} speed={msg.speed}, angle={msg.angle}'
                     )
                 else:
                     self.get_logger().warning('Move command missing speed or angle.')
@@ -208,6 +226,44 @@ class ROSBridge(Node):
                 self.get_logger().warning(f'Unknown command type: {cmd}')
         except Exception as e:
             self.get_logger().error(f'Error processing message: {e}')
+
+    def lidar_callback(self, msg):
+        """
+        Forward lidar data as JSON to all connected WebSocket clients.
+
+        Parameters:
+            msg (object): A message object (typically of type sensor_msgs.msg.LaserScan)
+                containing lidar data. The object is expected to have:
+                - header.stamp.sec (int): The seconds part of the timestamp.
+                - header.stamp.nanosec (int): The nanoseconds part of the timestamp.
+                - angle_min (float): The minimum angle of the scan.
+                - angle_max (float): The maximum angle of the scan.
+                - angle_increment (float): The angular increment between consecutive measurements.
+                - ranges (Iterable[float]): The range measurements from the lidar sensor.
+                - intensities (Iterable[float]): The intensity values corresponding to each range reading.
+
+        Raises:
+            Exception: If there is an error sending the JSON message to any client,
+                the exception is caught and an error message is logged.
+
+        Returns:
+            None
+        """
+        data = {
+            'timestamp': msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9,
+            'angle_min': msg.angle_min,
+            'angle_max': msg.angle_max,
+            'angle_increment': msg.angle_increment,
+            'ranges': list(msg.ranges),
+            'intensities': list(msg.intensities),
+        }
+        json_data = json.dumps({'lidar': data})
+
+        for client in self.clients:
+            try:
+                self.server.send_message(client, json_data)
+            except Exception as e:
+                self.get_logger().error(f"Error sending to client {client.get('id', 'unknown')}: {e}")
 
 
 def main(args=None):
