@@ -27,10 +27,6 @@ import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
 
-import RPi.GPIO as GPIO
-
-from custom_msgs.msg import VehicleCommand
-
 import rclpy
 from rclpy.node import Node
 

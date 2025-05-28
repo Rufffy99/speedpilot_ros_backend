@@ -119,7 +119,7 @@ class CarController(Node):
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
-            qos_profile
+            qos_profile,
             10
         )
         self.get_logger().info('CarController node started.')
