@@ -32,6 +32,8 @@ from std_msgs.msg import Float32
 # Configuration flags
 USE_ULTRASONIC = True  # Set to False to disable ultrasonic obstacle check
 ULTRASONIC_MIN_DISTANCE = 0.3  # Minimum allowed distance in meters
+STEERING_NEUTRAL_OFFSET = 7.5  # Adjust this slightly if the wheels are not centered (e.g., 7.54)
+STEERING_OFFSET = 0.0  # Applied to neutral, min, and max duty cycles for fine tuning
 
 
 class CarController(Node):
@@ -219,17 +221,19 @@ class CarController(Node):
         Set the steering angle by adjusting the PWM duty cycle on the motor.
 
         The duty cycle is calculated based on the provided angle to ensure proper steering:
-            - A neutral (centered) angle results in a duty cycle of 7.5.
-            - For negative angles (steering left), the duty cycle is decreased, with a lower bound of 5.0.
-            - For positive angles (steering right), the duty cycle is increased, with an upper bound of 10.0.
+            - A neutral (centered) angle results in a duty cycle of 7.5 + STEERING_OFFSET.
+            - For negative angles (steering left), the duty cycle is decreased,
+              with a lower bound of 5.0 + STEERING_OFFSET.
+            - For positive angles (steering right), the duty cycle is increased,
+              with an upper bound of 10.0 + STEERING_OFFSET.
         Parameters:
             angle (float): The desired steering angle in degrees. Negative values steer left,
                            positive values steer right.
         This method updates the PWM duty cycle accordingly and logs the resulting duty cycle along with the input angle.
         """
-        neutral_duty_cycle = 7.5
-        minimum_duty_cycle = 5.0
-        maximum_duty_cycle = 10.0
+        neutral_duty_cycle = STEERING_NEUTRAL_OFFSET + STEERING_OFFSET
+        minimum_duty_cycle = 5.0 + STEERING_OFFSET
+        maximum_duty_cycle = 10.0 + STEERING_OFFSET
 
         duty_cycle = neutral_duty_cycle + (angle * (neutral_duty_cycle - minimum_duty_cycle))
 

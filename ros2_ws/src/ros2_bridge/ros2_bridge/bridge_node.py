@@ -27,16 +27,18 @@ import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
 
-import rclpy
-from rclpy.node import Node
-
-from websocket_server import WebsocketServer
-
-from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
 from google.protobuf.json_format import MessageToDict
+
+from nav_msgs.msg import OccupancyGrid
+
+import rclpy
+from rclpy.node import Node
+
+from sensor_msgs.msg import LaserScan
+
+from websocket_server import WebsocketServer
 
 
 def patch_websocket_server():
