@@ -109,7 +109,7 @@ class UltrasonicSensorNode(Node):
             self.publisher_.publish(msg)
             self.get_logger().info(f'Distanz: {distance:.2f} m')
         else:
-            self.get_logger().warn('Ungültige Messung')
+            self.get_logger().warning('Ungültige Messung')
 
     def get_distance(self):
         """
