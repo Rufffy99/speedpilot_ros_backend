@@ -296,22 +296,20 @@ class ROSBridge(Node):
         """Forward pose data as JSON to all connected WebSocket clients."""
         try:
             data = {
-                'pose': {
-                    'position': {
-                        'x': msg.pose.pose.position.x,
-                        'y': msg.pose.pose.position.y,
-                        'z': msg.pose.pose.position.z
-                    },
-                    'orientation': {
-                        'x': msg.pose.pose.orientation.x,
-                        'y': msg.pose.pose.orientation.y,
-                        'z': msg.pose.pose.orientation.z,
-                        'w': msg.pose.pose.orientation.w
-                    }
+                'position': {
+                    'x': msg.pose.pose.position.x,
+                    'y': msg.pose.pose.position.y,
+                    'z': msg.pose.pose.position.z
+                },
+                'orientation': {
+                    'x': msg.pose.pose.orientation.x,
+                    'y': msg.pose.pose.orientation.y,
+                    'z': msg.pose.pose.orientation.z,
+                    'w': msg.pose.pose.orientation.w
                 },
                 'covariance': list(msg.pose.covariance)
             }
-            json_data = json.dumps({'pose': data})
+            json_data = json.dumps(data)
             for client in self.clients:
                 try:
                     self.server.send_message(client, json_data)
