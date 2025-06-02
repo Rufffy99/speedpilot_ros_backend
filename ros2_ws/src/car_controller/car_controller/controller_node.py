@@ -18,7 +18,6 @@ Subscribe to the 'vehicle_command' topic and convert VehicleCommand messages int
 vehicle control actions.
 """
 
-
 import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
@@ -26,6 +25,13 @@ from custom_msgs.msg import VehicleCommand
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+
+from std_msgs.msg import Float32
+
+
+# Configuration flags
+USE_ULTRASONIC = True  # Set to False to disable ultrasonic obstacle check
+ULTRASONIC_MIN_DISTANCE = 0.3  # Minimum allowed distance in meters
 
 
 class CarController(Node):
@@ -124,6 +130,16 @@ class CarController(Node):
         )
         self.get_logger().info('CarController node started.')
 
+        self.ultrasonic_distance = float('inf')
+
+        if USE_ULTRASONIC:
+            self.ultrasonic_subscriber = self.create_subscription(
+                Float32,
+                '/ultrasonic/distance',
+                self.ultrasonic_callback,
+                10
+            )
+
     def command_callback(self, msg: VehicleCommand):
         """
         Process an incoming VehicleCommand message to control vehicle movement and steering.
@@ -155,20 +171,25 @@ class CarController(Node):
         # Use the angle field for steering
         self.set_steering(msg.angle)
 
+    def ultrasonic_callback(self, msg: Float32):
+        """Receive and store the latest ultrasonic distance measurement."""
+        self.ultrasonic_distance = msg.data
+
     def drive_forward(self, speed):
         """
         Drive the vehicle forward at the specified speed.
 
-        This method updates the PWM duty cycle for the motor controlling forward movement,
-        ensuring that the speed value is clamped between 0 and 100 percent. It sets the backward
-        motor's duty cycle to 0 to ensure only forward movement occurs.
-        Parameters:
-            speed (float or int): The desired speed as a percentage (0 to 100) used to set the
-                                  PWM duty cycle for forward motion.
-        Side Effects:
-            - Modifies the state of motor_forward and motor_backward PWM channels.
-            - Logs the driving action with the specified speed.
+        If USE_ULTRASONIC is enabled and an obstacle is detected within ULTRASONIC_MIN_DISTANCE,
+        forward motion is blocked and a warning is logged.
         """
+        if USE_ULTRASONIC and self.ultrasonic_distance < ULTRASONIC_MIN_DISTANCE:
+            self.motor_forward.ChangeDutyCycle(0)
+            self.motor_backward.ChangeDutyCycle(0)
+            self.get_logger().warn(
+                f'Obstacle too close ({self.ultrasonic_distance:.2f} m). Forward motion blocked.'
+            )
+            return
+
         pwm_speed = min(max(speed * 100, 0), 100)
         self.motor_forward.ChangeDutyCycle(pwm_speed)
         self.motor_backward.ChangeDutyCycle(0)
