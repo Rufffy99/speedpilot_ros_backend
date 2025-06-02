@@ -33,6 +33,10 @@ from rclpy.node import Node
 from websocket_server import WebsocketServer
 
 from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+from google.protobuf.json_format import MessageToDict
 
 
 def patch_websocket_server():
@@ -110,6 +114,18 @@ class ROSBridge(Node):
             LaserScan,
             'scan',
             self.lidar_callback,
+            10
+        )
+        self.map_subscriber = self.create_subscription(
+            OccupancyGrid,
+            'map',
+            self.map_callback,
+            10
+        )
+        self.pose_subscriber = self.create_subscription(
+            PoseWithCovarianceStamped,
+            'pose',
+            self.pose_callback,
             10
         )
         self.clients = []
@@ -261,6 +277,48 @@ class ROSBridge(Node):
                 self.server.send_message(client, json_data)
             except Exception as e:
                 self.get_logger().error(f"Error sending to client {client.get('id', 'unknown')}: {e}")
+
+    def map_callback(self, msg):
+        """Forward full OccupancyGrid message as JSON to all connected WebSocket clients."""
+        try:
+            # Convert ROS message to dictionary and then to JSON
+            msg_dict = MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
+            json_data = json.dumps({'map': msg_dict})
+            for client in self.clients:
+                try:
+                    self.server.send_message(client, json_data)
+                except Exception as e:
+                    self.get_logger().error(f"Error sending map to client {client.get('id', 'unknown')}: {e}")
+        except Exception as e:
+            self.get_logger().error(f'Map callback error: {e}')
+
+    def pose_callback(self, msg):
+        """Forward pose data as JSON to all connected WebSocket clients."""
+        try:
+            data = {
+                'pose': {
+                    'position': {
+                        'x': msg.pose.pose.position.x,
+                        'y': msg.pose.pose.position.y,
+                        'z': msg.pose.pose.position.z
+                    },
+                    'orientation': {
+                        'x': msg.pose.pose.orientation.x,
+                        'y': msg.pose.pose.orientation.y,
+                        'z': msg.pose.pose.orientation.z,
+                        'w': msg.pose.pose.orientation.w
+                    }
+                },
+                'covariance': list(msg.pose.covariance)
+            }
+            json_data = json.dumps({'pose': data})
+            for client in self.clients:
+                try:
+                    self.server.send_message(client, json_data)
+                except Exception as e:
+                    self.get_logger().error(f"Error sending pose to client {client.get('id', 'unknown')}: {e}")
+        except Exception as e:
+            self.get_logger().error(f'Pose callback error: {e}')
 
 
 def main(args=None):
