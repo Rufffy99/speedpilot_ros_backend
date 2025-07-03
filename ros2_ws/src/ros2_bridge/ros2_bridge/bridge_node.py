@@ -130,7 +130,7 @@ class ROSBridge(Node):
             self.pose_callback,
             10
         )
-        self.clients = []
+        self.ws_clients = []
 
     def run_websocket_server(self):
         """Start the WebSocket server in an infinite loop so that it restarts upon any error."""
@@ -154,7 +154,7 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client has connected.')
                 return
-            self.clients.append(client)
+            self.ws_clients.append(client)
             self.get_logger().info(
                 f'New WebSocket client connected: {client.get("id", "unknown")}'
             )
@@ -167,8 +167,8 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client disconnected.')
                 return
-            if client in self.clients:
-                self.clients.remove(client)
+            if client in self.ws_clients:
+                self.ws_clients.remove(client)
             self.get_logger().info(
                 f'WebSocket client {client.get("id", "unknown")} has disconnected.'
             )
@@ -274,7 +274,7 @@ class ROSBridge(Node):
         }
         json_data = json.dumps({'lidar': data})
 
-        for client in self.clients:
+        for client in self.ws_clients:
             try:
                 self.server.send_message(client, json_data)
             except Exception as e:
@@ -286,7 +286,7 @@ class ROSBridge(Node):
             # Convert ROS message to dictionary and then to JSON
             msg_dict = MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
             json_data = json.dumps({'map': msg_dict})
-            for client in self.clients:
+            for client in self.ws_clients:
                 try:
                     self.server.send_message(client, json_data)
                 except Exception as e:
@@ -312,7 +312,7 @@ class ROSBridge(Node):
                 'covariance': list(msg.pose.covariance)
             }
             json_data = json.dumps(data)
-            for client in self.clients:
+            for client in self.ws_clients:
                 try:
                     self.server.send_message(client, json_data)
                 except Exception as e:

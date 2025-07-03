@@ -30,10 +30,10 @@ from std_msgs.msg import Float32
 
 
 # Configuration flags
-USE_ULTRASONIC = True  # Set to False to disable ultrasonic obstacle check
+USE_ULTRASONIC = False  # Set to False to disable ultrasonic obstacle check
 ULTRASONIC_MIN_DISTANCE = 0.3  # Minimum allowed distance in meters
 STEERING_NEUTRAL_OFFSET = 7.5  # Adjust this slightly if the wheels are not centered (e.g., 7.54)
-STEERING_OFFSET = 0.0  # Applied to neutral, min, and max duty cycles for fine tuning
+STEERING_OFFSET = -0.2  # Applied to neutral, min, and max duty cycles for fine tuning
 
 
 class CarController(Node):
@@ -127,8 +127,7 @@ class CarController(Node):
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
-            qos_profile,
-            10
+            qos_profile
         )
         self.get_logger().info('CarController node started.')
 
@@ -138,8 +137,7 @@ class CarController(Node):
             self.ultrasonic_subscriber = self.create_subscription(
                 Float32,
                 '/ultrasonic/distance',
-                self.ultrasonic_callback,
-                10
+                self.ultrasonic_callback
             )
 
     def command_callback(self, msg: VehicleCommand):
