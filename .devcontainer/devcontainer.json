@@ -1,0 +1,16 @@
+{
+  "name": "ros2-dev",
+  "image": "dein/ros2-image",
+  "runArgs": [
+    "--env=DISPLAY=host.docker.internal:0",
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "ms-iot.vscode-ros"
+      ]
+    }
+  }
+}
