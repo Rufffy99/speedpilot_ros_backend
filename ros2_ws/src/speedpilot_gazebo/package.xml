@@ -1,0 +1,18 @@
+<package format="3">
+  <name>speedpilot_gazebo</name>
+  <version>0.0.0</version>
+  <description>Speedpilot Gazebo Simulation</description>
+  <maintainer email="max@domitrovic.com">Max Domitrovic</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>ros_gz_sim</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>xacro</depend>
+  <depend>speedpilot_description</depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

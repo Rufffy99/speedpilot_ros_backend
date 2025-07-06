@@ -1,8 +1,11 @@
 {
   "name": "ros2-dev",
-  "image": "manipulation:latest",
+  "build": {
+    "context": "..",
+    "dockerfile": "../docker/Dockerfile"
+  },
   "runArgs": [
-    "--env=DISPLAY=host.docker.internal:0",
+    "--env=DISPLAY=:0",  // ← Nutze lokalen X11 Socket
     "--env=QT_X11_NO_MITSHM=1",
     "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw"
   ],
@@ -16,12 +19,13 @@
     }
   },
   "mounts": [
-    "source=${localWorkspaceFolder}/ros2_ws,target=/root/ros2_ws,type=bind",
-    "source=${localEnv:HOME}/automaticaddison/shared/ros2,target=/root/shared/ros2,type=bind"
+    "source=${localWorkspaceFolder}/ros2_ws,target=/root/ros2_ws,type=bind"
+    // Du kannst den folgenden Mount entfernen oder den Pfad korrekt setzen:
+    // "source=${localEnv:HOME}/automaticaddison/shared/ros2,target=/root/shared/ros2,type=bind"
   ],
-  "postCreateCommand": "/bin/bash /workspaces/speedpilot/docker/build.sh",
+  "postCreateCommand": "/bin/bash /workspaces/speedpilot_ros_backend/docker/build.sh",
   "containerEnv": {
-    "DISPLAY": "host.docker.internal:0",
+    "DISPLAY": ":0",
     "QT_X11_NO_MITSHM": "1",
     "INSIDE_DEVCONTAINER": "true"
   }
