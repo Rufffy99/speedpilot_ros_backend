@@ -1,30 +1,32 @@
-
 services:
-  manipulation: &manipulation
-    build: 
+  manipulation:
+    build:
       context: ../
       dockerfile: docker/Dockerfile
     container_name: manipulation
     image: manipulation:latest
+
     ipc: host
     network_mode: host
     privileged: true
-    devices:
-      - /dev/gpiomem
-      - /dev/mem
-    ports:
-      - 9090:9090
+
     environment:
-      - DISPLAY
+      - DISPLAY=host.docker.internal:0
       - XAUTHORITY=/tmp/.Xauthority
+
     volumes:
-      - /home/raspberry/studienarbeit/speedpilot_ros_backend/ros2_ws:/root/ros2_ws
-      - $HOME/automaticaddison/shared/ros2:/root/shared/ros2
-      - $HOME/.Xauthority:/tmp/.Xauthority
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/tmp/.Xauthority:ro
+      - ${HOME}/automaticaddison/shared/ros2:/root/shared/ros2:cached
+      - ${PWD}/../ros2_ws:/root/ros2_ws:cached
       - /dev:/dev
       - /sys/class/gpio:/sys/class/gpio
       - /dev/gpiomem:/dev/gpiomem
       - /dev/mem:/dev/mem
+
+    devices:
+      - /dev/gpiomem
+      - /dev/mem
+
     mem_limit: 4G
     command: ["tail", "-f", "/dev/null"]
