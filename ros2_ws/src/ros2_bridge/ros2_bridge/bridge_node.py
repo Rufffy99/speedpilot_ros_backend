@@ -27,12 +27,18 @@ import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
 
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+from google.protobuf.json_format import MessageToDict
+
+from nav_msgs.msg import OccupancyGrid
+
 import rclpy
 from rclpy.node import Node
 
-from websocket_server import WebsocketServer
-
 from sensor_msgs.msg import LaserScan
+
+from websocket_server import WebsocketServer
 
 
 def patch_websocket_server():
@@ -112,7 +118,19 @@ class ROSBridge(Node):
             self.lidar_callback,
             10
         )
-        self.clients = []
+        self.map_subscriber = self.create_subscription(
+            OccupancyGrid,
+            'map',
+            self.map_callback,
+            10
+        )
+        self.pose_subscriber = self.create_subscription(
+            PoseWithCovarianceStamped,
+            'pose',
+            self.pose_callback,
+            10
+        )
+        self.ws_clients = []
 
     def run_websocket_server(self):
         """Start the WebSocket server in an infinite loop so that it restarts upon any error."""
@@ -136,7 +154,7 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client has connected.')
                 return
-            self.clients.append(client)
+            self.ws_clients.append(client)
             self.get_logger().info(
                 f'New WebSocket client connected: {client.get("id", "unknown")}'
             )
@@ -149,8 +167,8 @@ class ROSBridge(Node):
             if client is None:
                 self.get_logger().warning('An unknown client disconnected.')
                 return
-            if client in self.clients:
-                self.clients.remove(client)
+            if client in self.ws_clients:
+                self.ws_clients.remove(client)
             self.get_logger().info(
                 f'WebSocket client {client.get("id", "unknown")} has disconnected.'
             )
@@ -256,11 +274,51 @@ class ROSBridge(Node):
         }
         json_data = json.dumps({'lidar': data})
 
-        for client in self.clients:
+        for client in self.ws_clients:
             try:
                 self.server.send_message(client, json_data)
             except Exception as e:
                 self.get_logger().error(f"Error sending to client {client.get('id', 'unknown')}: {e}")
+
+    def map_callback(self, msg):
+        """Forward full OccupancyGrid message as JSON to all connected WebSocket clients."""
+        try:
+            # Convert ROS message to dictionary and then to JSON
+            msg_dict = MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
+            json_data = json.dumps({'map': msg_dict})
+            for client in self.ws_clients:
+                try:
+                    self.server.send_message(client, json_data)
+                except Exception as e:
+                    self.get_logger().error(f"Error sending map to client {client.get('id', 'unknown')}: {e}")
+        except Exception as e:
+            self.get_logger().error(f'Map callback error: {e}')
+
+    def pose_callback(self, msg):
+        """Forward pose data as JSON to all connected WebSocket clients."""
+        try:
+            data = {
+                'position': {
+                    'x': msg.pose.pose.position.x,
+                    'y': msg.pose.pose.position.y,
+                    'z': msg.pose.pose.position.z
+                },
+                'orientation': {
+                    'x': msg.pose.pose.orientation.x,
+                    'y': msg.pose.pose.orientation.y,
+                    'z': msg.pose.pose.orientation.z,
+                    'w': msg.pose.pose.orientation.w
+                },
+                'covariance': list(msg.pose.covariance)
+            }
+            json_data = json.dumps(data)
+            for client in self.ws_clients:
+                try:
+                    self.server.send_message(client, json_data)
+                except Exception as e:
+                    self.get_logger().error(f"Error sending pose to client {client.get('id', 'unknown')}: {e}")
+        except Exception as e:
+            self.get_logger().error(f'Pose callback error: {e}')
 
 
 def main(args=None):

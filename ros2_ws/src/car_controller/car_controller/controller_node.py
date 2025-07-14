@@ -18,7 +18,6 @@ Subscribe to the 'vehicle_command' topic and convert VehicleCommand messages int
 vehicle control actions.
 """
 
-
 import RPi.GPIO as GPIO
 
 from custom_msgs.msg import VehicleCommand
@@ -26,6 +25,15 @@ from custom_msgs.msg import VehicleCommand
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+
+from std_msgs.msg import Float32
+
+
+# Configuration flags
+USE_ULTRASONIC = False  # Set to False to disable ultrasonic obstacle check
+ULTRASONIC_MIN_DISTANCE = 0.3  # Minimum allowed distance in meters
+STEERING_NEUTRAL_OFFSET = 7.5  # Adjust this slightly if the wheels are not centered (e.g., 7.54)
+STEERING_OFFSET = -0.2  # Applied to neutral, min, and max duty cycles for fine tuning
 
 
 class CarController(Node):
@@ -119,10 +127,18 @@ class CarController(Node):
             VehicleCommand,
             'vehicle_command',
             self.command_callback,
-            qos_profile,
-            10
+            qos_profile
         )
         self.get_logger().info('CarController node started.')
+
+        self.ultrasonic_distance = float('inf')
+
+        if USE_ULTRASONIC:
+            self.ultrasonic_subscriber = self.create_subscription(
+                Float32,
+                '/ultrasonic/distance',
+                self.ultrasonic_callback
+            )
 
     def command_callback(self, msg: VehicleCommand):
         """
@@ -155,20 +171,25 @@ class CarController(Node):
         # Use the angle field for steering
         self.set_steering(msg.angle)
 
+    def ultrasonic_callback(self, msg: Float32):
+        """Receive and store the latest ultrasonic distance measurement."""
+        self.ultrasonic_distance = msg.data
+
     def drive_forward(self, speed):
         """
         Drive the vehicle forward at the specified speed.
 
-        This method updates the PWM duty cycle for the motor controlling forward movement,
-        ensuring that the speed value is clamped between 0 and 100 percent. It sets the backward
-        motor's duty cycle to 0 to ensure only forward movement occurs.
-        Parameters:
-            speed (float or int): The desired speed as a percentage (0 to 100) used to set the
-                                  PWM duty cycle for forward motion.
-        Side Effects:
-            - Modifies the state of motor_forward and motor_backward PWM channels.
-            - Logs the driving action with the specified speed.
+        If USE_ULTRASONIC is enabled and an obstacle is detected within ULTRASONIC_MIN_DISTANCE,
+        forward motion is blocked and a warning is logged.
         """
+        if USE_ULTRASONIC and self.ultrasonic_distance < ULTRASONIC_MIN_DISTANCE:
+            self.motor_forward.ChangeDutyCycle(0)
+            self.motor_backward.ChangeDutyCycle(0)
+            self.get_logger().warn(
+                f'Obstacle too close ({self.ultrasonic_distance:.2f} m). Forward motion blocked.'
+            )
+            return
+
         pwm_speed = min(max(speed * 100, 0), 100)
         self.motor_forward.ChangeDutyCycle(pwm_speed)
         self.motor_backward.ChangeDutyCycle(0)
@@ -198,17 +219,19 @@ class CarController(Node):
         Set the steering angle by adjusting the PWM duty cycle on the motor.
 
         The duty cycle is calculated based on the provided angle to ensure proper steering:
-            - A neutral (centered) angle results in a duty cycle of 7.5.
-            - For negative angles (steering left), the duty cycle is decreased, with a lower bound of 5.0.
-            - For positive angles (steering right), the duty cycle is increased, with an upper bound of 10.0.
+            - A neutral (centered) angle results in a duty cycle of 7.5 + STEERING_OFFSET.
+            - For negative angles (steering left), the duty cycle is decreased,
+              with a lower bound of 5.0 + STEERING_OFFSET.
+            - For positive angles (steering right), the duty cycle is increased,
+              with an upper bound of 10.0 + STEERING_OFFSET.
         Parameters:
             angle (float): The desired steering angle in degrees. Negative values steer left,
                            positive values steer right.
         This method updates the PWM duty cycle accordingly and logs the resulting duty cycle along with the input angle.
         """
-        neutral_duty_cycle = 7.5
-        minimum_duty_cycle = 5.0
-        maximum_duty_cycle = 10.0
+        neutral_duty_cycle = STEERING_NEUTRAL_OFFSET + STEERING_OFFSET
+        minimum_duty_cycle = 5.0 + STEERING_OFFSET
+        maximum_duty_cycle = 10.0 + STEERING_OFFSET
 
         duty_cycle = neutral_duty_cycle + (angle * (neutral_duty_cycle - minimum_duty_cycle))
 

@@ -1,3 +1,6 @@
 [submodule "ros2_ws/src/sllidar_ros2"]
 	path = ros2_ws/src/sllidar_ros2
 	url = https://github.com/Slamtec/sllidar_ros2.git
+[submodule "ros2_ws/src/slam_toolbox"]
+	path = ros2_ws/src/slam_toolbox
+	url = https://github.com/dein-username/slam_toolbox.git

@@ -18,6 +18,7 @@ services:
       - DISPLAY
       - XAUTHORITY=/tmp/.Xauthority
     volumes:
+      - /home/raspberry/studienarbeit/speedpilot_ros_backend/ros2_ws:/root/ros2_ws
       - $HOME/automaticaddison/shared/ros2:/root/shared/ros2
       - $HOME/.Xauthority:/tmp/.Xauthority
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
@@ -25,5 +26,5 @@ services:
       - /sys/class/gpio:/sys/class/gpio
       - /dev/gpiomem:/dev/gpiomem
       - /dev/mem:/dev/mem
+    mem_limit: 4G
     command: ["tail", "-f", "/dev/null"]
-

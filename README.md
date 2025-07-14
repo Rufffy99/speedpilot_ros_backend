@@ -128,20 +128,15 @@ speedpilot_ros_backend/
 │   └── workspace.sh
 ├── entrypoint.sh               # Entrypoint for Docker container
 ├── workspace.sh                # Helper for dev environments
-├── ros2_ws/                    # ROS 2 workspace
+├── ros2_ws/
 │   └── src/
 │       ├── car_controller/             # Node handling incoming drive commands
 │       ├── ros2_bridge/                # WebSocket server node (app ↔ backend)
-│       ├── sllidar_ros2/               # Lidar driver and visualizations
+│       ├── sllidar_ros2/               # Lidar driver and launch files
 │       ├── custom_msgs/                # Custom ROS 2 message definitions
-│       ├── [planned] telemetry_node/       # Node to log and transmit telemetry data
-│       ├── [planned] safety_monitor_node/  # Node to check for critical system states
-│       └── [planned] diagnostics_node/     # Node to monitor hardware health
-│
-│   ├── launch/
-│   │   ├── bringup.launch.py            # [planned] Combined launch file for all nodes
-│   │   └── lidar_launch.py              # Part of sllidar_ros2
-│
+│       ├── slam_toolbox/               # SLAM algorithm implementation (forked & patched)
+│       └── car_system_launch.py        # Combined system launcher
+│ 
 ├── README.md                   # You're reading it ;)
 ```
 
